@@ -7,42 +7,50 @@ Connection <- R6::R6Class(
     public = list(
         host = NULL,
         port = NULL,
+        username = NULL,
+        password = NULL,
         xptr = NULL,
 
-        initialize = function(host='localhost', port=5673) {
+        initialize = function(host='localhost', port=5672,
+                              username='guest', password='guest') {
             self$host = host
             self$port = port
-            self$xptr <- rabbitmq_connect(host, port)
+            self$username = username
+            self$password = password
+            self$xptr = amqp_connect(host, port)
+        },
+
+        channel = function() {
+            ch = Channel$new(self, private$current_channel)
+            private$current_channel = private$current_channel + 1
+            return(ch)
         }
     ),
+
+    private = list(
+         channels = list(),
+         current_channel = 1 
+    )
 )
 
 Channel <- R6::R6Class(
     'Channel',
     public = list(
         conn = NULL,
-        basic_consume = function() {
-            while (TRUE) {
-                # call
-            }
-        }
-    )
-)
-
-Queue <- R6::R6Class(
-    'Queue',
-    public = list(
-        declare = function() {
-           # declare queue
+        initialize = function(conn, channel_number) {
+            self$conn = conn
+            amqp_channel_open(self$conn$xptr, channel_number)
         },
 
-        bind = function(conn) {}
-    )
-)
-
-Exchange <- R6::R6Class(
-    'Exchange',
-    public = list(
-        name = NULL
+        queue_declare = function(queue) {
+            amqp_declare_queue(self$conn$xptr)
+        },
+        
+        basic_consume = function() {
+            while (TRUE) {
+                amqp_consume(self$conn$xptr)
+                sys.sleep(10)
+            }
+        }
     )
 )

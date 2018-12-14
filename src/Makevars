@@ -1,0 +1,2 @@
+PKG_LIBS=-L/usr/local/lib/x86_64-linux-gnu -lrabbitmq
+PKG_CXXFLAGS="-std=c++11"
