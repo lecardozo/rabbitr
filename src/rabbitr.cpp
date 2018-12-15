@@ -7,10 +7,11 @@
 using namespace Rcpp;
 
 amqp_connection_state_t rabbitmq_get_state(SEXP xptr) {
-    amqp_connection_state_t state = NULL;
-    state = (amqp_connection_state_t) R_ExternalPtrAddr(xptr);
-    Rcout << state << std::endl;
-    return state;
+    if (TYPEOF(xptr) != EXTPTRSXP) {
+        throw std::range_error("Expected an external pointer");
+    }
+    Rcpp::XPtr<amqp_connection_state_t> state(xptr);
+    return *state;
 }
 
 // [[Rcpp::export("amqp_connect")]]
@@ -34,7 +35,7 @@ SEXP connect(std::string host, int port) {
 
     amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, "guest", "guest");
 
-    Rcpp::XPtr<amqp_connection_state_t> p(&conn);
+    Rcpp::XPtr<amqp_connection_state_t> p(&conn, true);
 
     return p;
 }
