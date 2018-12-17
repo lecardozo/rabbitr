@@ -9,11 +9,15 @@ amqp_channel_open <- function(xptr, channel) {
     invisible(.Call('_rabbitr_channel_open', PACKAGE = 'rabbitr', xptr, channel))
 }
 
-amqp_queue_declare <- function(xptr) {
-    invisible(.Call('_rabbitr_queue_declare', PACKAGE = 'rabbitr', xptr))
+amqp_queue_declare <- function(xptr, channel, queue, passive, durable, exclusive, auto_delete) {
+    invisible(.Call('_rabbitr_queue_declare', PACKAGE = 'rabbitr', xptr, channel, queue, passive, durable, exclusive, auto_delete))
 }
 
-amqp_consume <- function(xptr) {
-    invisible(.Call('_rabbitr_consume', PACKAGE = 'rabbitr', xptr))
+amqp_queue_delete <- function(xptr, channel, queue, if_unused, if_empty) {
+    invisible(.Call('_rabbitr_queue_delete', PACKAGE = 'rabbitr', xptr, channel, queue, if_unused, if_empty))
+}
+
+amqp_basic_get <- function(xptr, channel, queue) {
+    .Call('_rabbitr_basic_get', PACKAGE = 'rabbitr', xptr, channel, queue)
 }
 

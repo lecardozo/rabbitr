@@ -7,12 +7,10 @@
 using namespace Rcpp;
 
 amqp_connection_state_t_* get_connection_state(SEXP xptr) {
-
     if (TYPEOF(xptr) != EXTPTRSXP) {
         throw std::range_error("Expected an external pointer");
     }
     Rcpp::XPtr<amqp_connection_state_t_> conn(xptr);
-
     return conn;
 }
 
@@ -53,28 +51,57 @@ void channel_open(SEXP xptr, int channel) {
 }
 
 // [[Rcpp::export("amqp_queue_declare")]]
-void queue_declare(SEXP xptr) {
-    amqp_bytes_t queue;
+void queue_declare(SEXP xptr, int channel, std::string queue,
+                   bool passive, bool durable, bool exclusive,
+                   bool auto_delete) {
+    amqp_bytes_t queuename;
+    queuename = amqp_cstring_bytes(queue.c_str());
     amqp_connection_state_t conn = get_connection_state(xptr);
     amqp_queue_declare_ok_t *r = amqp_queue_declare(
-        conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table
+        conn, channel, queuename, passive,
+        durable, exclusive, auto_delete, amqp_empty_table
     );
-
-    queue = amqp_bytes_malloc_dup(r->queue);
-    if (queue.bytes == NULL) {
-        Rcout << "Out of memory while copying queue name";
-    }
 }
 
-// [[Rcpp::export("amqp_consume")]]
-void consume(SEXP xptr) {
-    amqp_rpc_reply_t res;
-    amqp_envelope_t envelope;
+// [[Rcpp::export("amqp_queue_delete")]]
+void queue_delete(SEXP xptr, int channel, std::string queue,
+                  bool if_unused, bool if_empty) {
+    amqp_bytes_t queuename;
+    queuename = amqp_cstring_bytes(queue.c_str());
     amqp_connection_state_t conn = get_connection_state(xptr);
-    amqp_maybe_release_buffers(conn);
-
-    res = amqp_consume_message(conn, &envelope, NULL, 0);
-
-    amqp_destroy_envelope(&envelope);
+    amqp_queue_delete_ok_t *r = amqp_queue_delete(
+        conn, channel, queuename, if_unused, if_empty
+    );
 }
 
+// [[Rcpp::export("amqp_basic_get")]]
+List basic_get(SEXP xptr, int channel, std::string queue) {
+    amqp_rpc_reply_t reply;
+    amqp_message_t message;
+    amqp_bytes_t queuename = amqp_cstring_bytes(queue.c_str());
+    amqp_connection_state_t conn = get_connection_state(xptr);
+
+    reply = amqp_basic_get(conn, channel, queuename, 1);
+
+    amqp_read_message(conn, channel, &message, 0);
+
+    char *body_bytes = (char*)malloc(message.body.len);
+    memcpy(body_bytes, message.body.bytes, message.body.len);
+    std::string body(body_bytes);
+
+    return Rcpp::List::create(Rcpp::Named("body") = body);
+}
+
+void basic_publish(SEXP xptr, int channel, std::string exchange,
+                   std::string routing_key, bool mandatory,
+                   bool immediate, std::string body) {
+
+    amqp_basic_properties_t = props;
+    props.content_type = amqp_cstring_bytes("text/plain");
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_basic_publish(conn, channel,
+                       amqp_cstring_bytes(exchange),
+                       amqp_cstring_bytes(routing_key),
+                       mandatory, immediate, &props,
+                       amqp_cstring_bytes(body.c_str()))
+}
