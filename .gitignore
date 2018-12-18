@@ -1,3 +1,5 @@
 .Rproj.user
 .Rhistory
 .RData
+src/RcppExports.cpp
+R/RcppExports.R
