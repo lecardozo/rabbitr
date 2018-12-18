@@ -92,6 +92,7 @@ List basic_get(SEXP xptr, int channel, std::string queue) {
     return Rcpp::List::create(Rcpp::Named("body") = body);
 }
 
+// [[Rcpp::export("amqp_basic_publish")]]
 void basic_publish(SEXP xptr, int channel, std::string exchange,
                    std::string routing_key, bool mandatory,
                    bool immediate, std::string body) {
