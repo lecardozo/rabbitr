@@ -1,6 +1,33 @@
 #' @useDynLib rabbitr
 #' @importFrom Rcpp sourceCpp
+#' @importFrom R6 R6Class
 NULL
+
+#' Establishing connection with RabbitMQ
+#'
+#' This is the main function of the package.
+#' It establishes the connection between R and
+#' the RabbitMQ server.
+#'
+#' @param host Address of the RabbitMQ server.
+#' @param port Port to connect to RabbitMQ server.
+#' @param username Username for authentication.
+#' @param password Password for authentication.
+#'
+#' @return Connection object
+#'
+#' @examples
+#' \dontrun{
+#' conn <- rabbitr(host='localhost', port=5672)
+#' }
+#'
+#' @export
+rabbitr <- function(host='localhost', port=5672,
+                    username='guest', password='guest') {
+    return(Connection$new(host=host, port=port,
+                          username=username, password=password))
+}
+
 
 Connection <- R6::R6Class(
     'Connection',
