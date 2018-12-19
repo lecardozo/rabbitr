@@ -112,6 +112,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// basic_cancel
+void basic_cancel(SEXP xptr, int channel, std::string consumer_tag);
+RcppExport SEXP _rabbitr_basic_cancel(SEXP xptrSEXP, SEXP channelSEXP, SEXP consumer_tagSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
+    Rcpp::traits::input_parameter< int >::type channel(channelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type consumer_tag(consumer_tagSEXP);
+    basic_cancel(xptr, channel, consumer_tag);
+    return R_NilValue;
+END_RCPP
+}
 // basic_publish
 void basic_publish(SEXP xptr, int channel, std::string exchange, std::string routing_key, bool mandatory, bool immediate, std::string body);
 RcppExport SEXP _rabbitr_basic_publish(SEXP xptrSEXP, SEXP channelSEXP, SEXP exchangeSEXP, SEXP routing_keySEXP, SEXP mandatorySEXP, SEXP immediateSEXP, SEXP bodySEXP) {
@@ -128,6 +140,21 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// basic_consume
+void basic_consume(SEXP xptr, int channel, std::string queue, std::string consumer_tag, bool no_ack, bool exclusive);
+RcppExport SEXP _rabbitr_basic_consume(SEXP xptrSEXP, SEXP channelSEXP, SEXP queueSEXP, SEXP consumer_tagSEXP, SEXP no_ackSEXP, SEXP exclusiveSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
+    Rcpp::traits::input_parameter< int >::type channel(channelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type queue(queueSEXP);
+    Rcpp::traits::input_parameter< std::string >::type consumer_tag(consumer_tagSEXP);
+    Rcpp::traits::input_parameter< bool >::type no_ack(no_ackSEXP);
+    Rcpp::traits::input_parameter< bool >::type exclusive(exclusiveSEXP);
+    basic_consume(xptr, channel, queue, consumer_tag, no_ack, exclusive);
+    return R_NilValue;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rabbitr_connect", (DL_FUNC) &_rabbitr_connect, 2},
@@ -138,7 +165,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rabbitr_queue_purge", (DL_FUNC) &_rabbitr_queue_purge, 3},
     {"_rabbitr_queue_delete", (DL_FUNC) &_rabbitr_queue_delete, 5},
     {"_rabbitr_basic_get", (DL_FUNC) &_rabbitr_basic_get, 4},
+    {"_rabbitr_basic_cancel", (DL_FUNC) &_rabbitr_basic_cancel, 3},
     {"_rabbitr_basic_publish", (DL_FUNC) &_rabbitr_basic_publish, 7},
+    {"_rabbitr_basic_consume", (DL_FUNC) &_rabbitr_basic_consume, 6},
     {NULL, NULL, 0}
 };
 

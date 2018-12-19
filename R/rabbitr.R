@@ -90,6 +90,13 @@ Channel <- R6::R6Class(
                               queue, if_unused=if_unused,
                               if_empty=if_empty)
         },
+
+        basic_consume = function(queue='', consumer_tag=NULL, no_ack=FALSE,
+                                 exclusive=FALSE) {
+            amqp_basic_consume(self$conn$xptr, self$channel_number,
+                               queue=queue, consumer_tag=consumer_tag,
+                               no_ack=no_ack, exclusive=exclusive)
+        },
         
         basic_get = function(queue, no_ack=FALSE) {
             amqp_basic_get(self$conn$xptr, self$channel_number, queue, no_ack)
@@ -116,7 +123,12 @@ Channel <- R6::R6Class(
                                requeue=requeue)
         },
 
-        basic_publish = function(queue, msg) {
+        basic_publish = function(exchange, routing_key, body, properties=NULL,
+                                 mandatory=FALSE, immediate=FALSE) {
+            amqp_basic_publish(self$conn$xptr, self$channel_number,
+                               exchange=exchange, routing_key=routing_key,
+                               body=body, mandatory=mandatory,
+                               immediate=immediate)
         }
     )
 )

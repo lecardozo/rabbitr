@@ -132,6 +132,12 @@ List basic_get(SEXP xptr, int channel, std::string queue,
     return Rcpp::List::create(Rcpp::Named("body") = body);
 }
 
+// [[Rcpp::export("amqp_basic_cancel")]]
+void basic_cancel(SEXP xptr, int channel, std::string consumer_tag) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_basic_cancel(conn, channel, amqp_cstring_bytes(consumer_tag.c_str()));
+}
+
 // [[Rcpp::export("amqp_basic_publish")]]
 void basic_publish(SEXP xptr, int channel, std::string exchange,
                    std::string routing_key, bool mandatory,
@@ -145,6 +151,19 @@ void basic_publish(SEXP xptr, int channel, std::string exchange,
                        amqp_cstring_bytes(routing_key.c_str()),
                        mandatory, immediate, &props,
                        amqp_cstring_bytes(body.c_str()));
+}
+
+// [[Rcpp::export("amqp_basic_consume")]]
+void basic_consume(SEXP xptr, int channel, std::string queue,
+                   std::string consumer_tag,
+                   bool no_ack, bool exclusive) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_basic_consume(
+            conn, channel,
+            amqp_cstring_bytes(queue.c_str()),
+            amqp_cstring_bytes(consumer_tag.c_str()),
+            0, no_ack, exclusive, amqp_empty_table
+    );
 }
 
 // [Rcpp::export("amqp_basic_ack")]]
