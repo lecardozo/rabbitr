@@ -79,14 +79,41 @@ Channel <- R6::R6Class(
                                auto_delete=auto_delete)
         },
 
+        queue_bind = function(queue, exchange, routing_key) {
+            amqp_queue_bind(self$conn$xptr, self$channel_number,
+                            queue=queue, exchange=exchange,
+                            routing_key=routing_key)
+        },
+
         queue_delete = function(queue, if_unused=FALSE, if_empty=FALSE) {
             amqp_queue_delete(self$conn$xptr, self$channel_number,
                               queue, if_unused=if_unused,
                               if_empty=if_empty)
         },
         
-        basic_get = function(queue) {
-            amqp_basic_get(self$conn$xptr, self$channel_number, queue)
+        basic_get = function(queue, no_ack=FALSE) {
+            amqp_basic_get(self$conn$xptr, self$channel_number, queue, no_ack)
+        },
+
+        basic_ack = function(delivery_tag, multiple=FALSE) {
+            amqp_basic_ack(self$conn$xptr, self$channel_number,
+                           delivery_tag=delivery_tag, multiple=multiple)
+        },
+
+        basic_qos = function(prefetch_size=0, prefetch_count=0, global=FALSE) {
+            amqp_basic_qos(self$conn$xptr, self$channel_number,
+                           prefetch_size=prefetch_size,
+                           prefetch_count=prefetch_count)
+        },
+
+        basic_reject = function(delivery_tag, requeue=TRUE) {
+            amqp_basic_reject(self$conn$xptr, self$channel_number,
+                              delivery_tag=delivery_tag, requeue=requeue)
+        },
+
+        basic_recover = function(requeue=TRUE) {
+            amqp_basic_recover(self$conn$xptr, self$channel_number,
+                               requeue=requeue)
         },
 
         basic_publish = function(queue, msg) {

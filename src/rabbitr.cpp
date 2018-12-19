@@ -51,6 +51,12 @@ void channel_open(SEXP xptr, int channel) {
     amqp_channel_open(conn, channel);
 }
 
+// [Rcpp::export("amqp_channel_close")]]
+void channel_close(SEXP xptr, int channel) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_channel_close(conn, channel, AMQP_REPLY_SUCCESS);
+}
+
 // [[Rcpp::export("amqp_queue_declare")]]
 void queue_declare(SEXP xptr, int channel, std::string queue,
                    bool passive, bool durable, bool exclusive,
@@ -58,10 +64,42 @@ void queue_declare(SEXP xptr, int channel, std::string queue,
     amqp_bytes_t queuename;
     queuename = amqp_cstring_bytes(queue.c_str());
     amqp_connection_state_t conn = get_connection_state(xptr);
-    amqp_queue_declare_ok_t *r = amqp_queue_declare(
+    amqp_queue_declare(
         conn, channel, queuename, passive,
         durable, exclusive, auto_delete, amqp_empty_table
     );
+}
+
+// [[Rcpp::export("amqp_queue_bind")]]
+void queue_bind(SEXP xptr, int channel, std::string queue,
+                std::string exchange, std::string routing_key) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_queue_bind(
+        conn, channel,
+        amqp_cstring_bytes(queue.c_str()),
+        amqp_cstring_bytes(exchange.c_str()),
+        amqp_cstring_bytes(routing_key.c_str()),
+        amqp_empty_table
+    );
+}
+
+// [[Rcpp::export("amqp_queue_unbind")]]
+void queue_unbind(SEXP xptr, int channel, std::string queue,
+                  std::string exchange, std::string routing_key) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_queue_unbind(
+        conn, channel,
+        amqp_cstring_bytes(queue.c_str()),
+        amqp_cstring_bytes(exchange.c_str()),
+        amqp_cstring_bytes(routing_key.c_str()),
+        amqp_empty_table
+    );
+}
+
+// [[Rcpp::export("amqp_queue_purge")]]
+void queue_purge(SEXP xptr, int channel, std::string queue) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_queue_purge(conn, channel, amqp_cstring_bytes(queue.c_str()));
 }
 
 // [[Rcpp::export("amqp_queue_delete")]]
@@ -70,19 +108,20 @@ void queue_delete(SEXP xptr, int channel, std::string queue,
     amqp_bytes_t queuename;
     queuename = amqp_cstring_bytes(queue.c_str());
     amqp_connection_state_t conn = get_connection_state(xptr);
-    amqp_queue_delete_ok_t *r = amqp_queue_delete(
+    amqp_queue_delete(
         conn, channel, queuename, if_unused, if_empty
     );
 }
 
 // [[Rcpp::export("amqp_basic_get")]]
-List basic_get(SEXP xptr, int channel, std::string queue) {
+List basic_get(SEXP xptr, int channel, std::string queue, 
+               bool no_ack) {
     amqp_rpc_reply_t reply;
     amqp_message_t message;
     amqp_bytes_t queuename = amqp_cstring_bytes(queue.c_str());
     amqp_connection_state_t conn = get_connection_state(xptr);
 
-    reply = amqp_basic_get(conn, channel, queuename, 1);
+    reply = amqp_basic_get(conn, channel, queuename, no_ack);
 
     amqp_read_message(conn, channel, &message, 0);
 
@@ -106,4 +145,31 @@ void basic_publish(SEXP xptr, int channel, std::string exchange,
                        amqp_cstring_bytes(routing_key.c_str()),
                        mandatory, immediate, &props,
                        amqp_cstring_bytes(body.c_str()));
+}
+
+// [Rcpp::export("amqp_basic_ack")]]
+void basic_ack(SEXP xptr, int channel, int delivery_tag,
+               bool multiple) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_basic_ack(conn, channel, delivery_tag, multiple);
+}
+
+// [Rcpp::export("amqp_basic_qos")]]
+void basic_qos(SEXP xptr, int channel, int prefetch_size,
+               int prefetch_count, bool global) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_basic_qos(conn, channel, prefetch_size, prefetch_count, global);
+}
+
+// [Rcpp::export("amqp_basic_reject")]]
+void basic_reject(SEXP xptr, int channel, int delivery_tag,
+                  bool requeue) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_basic_reject(conn, channel, delivery_tag, requeue);
+}
+
+// [Rcpp::export("amqp_basic_recover")]]
+void basic_recover(SEXP xptr, int channel, bool requeue) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_basic_recover(conn, channel, requeue);
 }

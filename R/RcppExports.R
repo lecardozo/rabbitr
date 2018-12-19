@@ -13,12 +13,24 @@ amqp_queue_declare <- function(xptr, channel, queue, passive, durable, exclusive
     invisible(.Call('_rabbitr_queue_declare', PACKAGE = 'rabbitr', xptr, channel, queue, passive, durable, exclusive, auto_delete))
 }
 
+amqp_queue_bind <- function(xptr, channel, queue, exchange, routing_key) {
+    invisible(.Call('_rabbitr_queue_bind', PACKAGE = 'rabbitr', xptr, channel, queue, exchange, routing_key))
+}
+
+amqp_queue_unbind <- function(xptr, channel, queue, exchange, routing_key) {
+    invisible(.Call('_rabbitr_queue_unbind', PACKAGE = 'rabbitr', xptr, channel, queue, exchange, routing_key))
+}
+
+amqp_queue_purge <- function(xptr, channel, queue) {
+    invisible(.Call('_rabbitr_queue_purge', PACKAGE = 'rabbitr', xptr, channel, queue))
+}
+
 amqp_queue_delete <- function(xptr, channel, queue, if_unused, if_empty) {
     invisible(.Call('_rabbitr_queue_delete', PACKAGE = 'rabbitr', xptr, channel, queue, if_unused, if_empty))
 }
 
-amqp_basic_get <- function(xptr, channel, queue) {
-    .Call('_rabbitr_basic_get', PACKAGE = 'rabbitr', xptr, channel, queue)
+amqp_basic_get <- function(xptr, channel, queue, no_ack) {
+    .Call('_rabbitr_basic_get', PACKAGE = 'rabbitr', xptr, channel, queue, no_ack)
 }
 
 amqp_basic_publish <- function(xptr, channel, exchange, routing_key, mandatory, immediate, body) {

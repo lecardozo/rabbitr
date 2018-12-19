@@ -44,6 +44,46 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// queue_bind
+void queue_bind(SEXP xptr, int channel, std::string queue, std::string exchange, std::string routing_key);
+RcppExport SEXP _rabbitr_queue_bind(SEXP xptrSEXP, SEXP channelSEXP, SEXP queueSEXP, SEXP exchangeSEXP, SEXP routing_keySEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
+    Rcpp::traits::input_parameter< int >::type channel(channelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type queue(queueSEXP);
+    Rcpp::traits::input_parameter< std::string >::type exchange(exchangeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type routing_key(routing_keySEXP);
+    queue_bind(xptr, channel, queue, exchange, routing_key);
+    return R_NilValue;
+END_RCPP
+}
+// queue_unbind
+void queue_unbind(SEXP xptr, int channel, std::string queue, std::string exchange, std::string routing_key);
+RcppExport SEXP _rabbitr_queue_unbind(SEXP xptrSEXP, SEXP channelSEXP, SEXP queueSEXP, SEXP exchangeSEXP, SEXP routing_keySEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
+    Rcpp::traits::input_parameter< int >::type channel(channelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type queue(queueSEXP);
+    Rcpp::traits::input_parameter< std::string >::type exchange(exchangeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type routing_key(routing_keySEXP);
+    queue_unbind(xptr, channel, queue, exchange, routing_key);
+    return R_NilValue;
+END_RCPP
+}
+// queue_purge
+void queue_purge(SEXP xptr, int channel, std::string queue);
+RcppExport SEXP _rabbitr_queue_purge(SEXP xptrSEXP, SEXP channelSEXP, SEXP queueSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
+    Rcpp::traits::input_parameter< int >::type channel(channelSEXP);
+    Rcpp::traits::input_parameter< std::string >::type queue(queueSEXP);
+    queue_purge(xptr, channel, queue);
+    return R_NilValue;
+END_RCPP
+}
 // queue_delete
 void queue_delete(SEXP xptr, int channel, std::string queue, bool if_unused, bool if_empty);
 RcppExport SEXP _rabbitr_queue_delete(SEXP xptrSEXP, SEXP channelSEXP, SEXP queueSEXP, SEXP if_unusedSEXP, SEXP if_emptySEXP) {
@@ -59,15 +99,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // basic_get
-List basic_get(SEXP xptr, int channel, std::string queue);
-RcppExport SEXP _rabbitr_basic_get(SEXP xptrSEXP, SEXP channelSEXP, SEXP queueSEXP) {
+List basic_get(SEXP xptr, int channel, std::string queue, bool no_ack);
+RcppExport SEXP _rabbitr_basic_get(SEXP xptrSEXP, SEXP channelSEXP, SEXP queueSEXP, SEXP no_ackSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
     Rcpp::traits::input_parameter< int >::type channel(channelSEXP);
     Rcpp::traits::input_parameter< std::string >::type queue(queueSEXP);
-    rcpp_result_gen = Rcpp::wrap(basic_get(xptr, channel, queue));
+    Rcpp::traits::input_parameter< bool >::type no_ack(no_ackSEXP);
+    rcpp_result_gen = Rcpp::wrap(basic_get(xptr, channel, queue, no_ack));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -92,8 +133,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rabbitr_connect", (DL_FUNC) &_rabbitr_connect, 2},
     {"_rabbitr_channel_open", (DL_FUNC) &_rabbitr_channel_open, 2},
     {"_rabbitr_queue_declare", (DL_FUNC) &_rabbitr_queue_declare, 7},
+    {"_rabbitr_queue_bind", (DL_FUNC) &_rabbitr_queue_bind, 5},
+    {"_rabbitr_queue_unbind", (DL_FUNC) &_rabbitr_queue_unbind, 5},
+    {"_rabbitr_queue_purge", (DL_FUNC) &_rabbitr_queue_purge, 3},
     {"_rabbitr_queue_delete", (DL_FUNC) &_rabbitr_queue_delete, 5},
-    {"_rabbitr_basic_get", (DL_FUNC) &_rabbitr_basic_get, 3},
+    {"_rabbitr_basic_get", (DL_FUNC) &_rabbitr_basic_get, 4},
     {"_rabbitr_basic_publish", (DL_FUNC) &_rabbitr_basic_publish, 7},
     {NULL, NULL, 0}
 };
