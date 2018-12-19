@@ -2,4 +2,5 @@
 .Rhistory
 .RData
 src/RcppExports.cpp
+src/Makevars
 R/RcppExports.R

@@ -1,10 +1,10 @@
 Package: rabbitr
-Title: What the Package Does (one line, title case)
+Title: RabbitMQ client for R
 Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Authors@R: person("Lucas", "Cardozo", email = "lucasecardozo@gmail.com", role = c("aut", "cre"))
+Description: rabbitr is a RabbitMQ client in R built on top of rabbitmq-c client.
 Depends: R (>= 3.4.4)
-License: What license is it under?
+License: MIT
 Encoding: UTF-8
 LazyData: true
 LinkingTo: Rcpp
