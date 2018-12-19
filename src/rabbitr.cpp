@@ -5,6 +5,8 @@
 
 using namespace Rcpp;
 
+// [[Rcpp::plugins(cpp11)]]
+
 amqp_connection_state_t_* get_connection_state(SEXP xptr) {
     if (TYPEOF(xptr) != EXTPTRSXP) {
         throw std::range_error("Expected an external pointer");

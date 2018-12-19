@@ -1,2 +1,1 @@
 PKG_LIBS=@libs@
-PKG_CXXFLAGS=-std=c++11
