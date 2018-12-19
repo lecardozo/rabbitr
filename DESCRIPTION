@@ -4,9 +4,11 @@ Version: 0.0.0.9000
 Authors@R: person("Lucas", "Cardozo", email = "lucasecardozo@gmail.com", role = c("aut", "cre"))
 Description: rabbitr is a RabbitMQ client in R built on top of rabbitmq-c client.
 Depends: R (>= 3.4.4)
-License: MIT
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 LinkingTo: Rcpp
-Imports: Rcpp
+Imports:
+    R6,
+    Rcpp
 RoxygenNote: 6.0.1
