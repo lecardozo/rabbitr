@@ -2,7 +2,6 @@
 #include <string>
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
-#include "utils.h"
 
 using namespace Rcpp;
 
@@ -97,12 +96,12 @@ void basic_publish(SEXP xptr, int channel, std::string exchange,
                    std::string routing_key, bool mandatory,
                    bool immediate, std::string body) {
 
-    amqp_basic_properties_t = props;
+    amqp_basic_properties_t props;
     props.content_type = amqp_cstring_bytes("text/plain");
     amqp_connection_state_t conn = get_connection_state(xptr);
     amqp_basic_publish(conn, channel,
-                       amqp_cstring_bytes(exchange),
-                       amqp_cstring_bytes(routing_key),
+                       amqp_cstring_bytes(exchange.c_str()),
+                       amqp_cstring_bytes(routing_key.c_str()),
                        mandatory, immediate, &props,
-                       amqp_cstring_bytes(body.c_str()))
+                       amqp_cstring_bytes(body.c_str()));
 }
