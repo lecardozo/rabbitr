@@ -6,14 +6,16 @@
 using namespace Rcpp;
 
 // connect
-SEXP connect(std::string host, int port);
-RcppExport SEXP _rabbitr_connect(SEXP hostSEXP, SEXP portSEXP) {
+SEXP connect(std::string host, int port, std::string username, std::string password);
+RcppExport SEXP _rabbitr_connect(SEXP hostSEXP, SEXP portSEXP, SEXP usernameSEXP, SEXP passwordSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type host(hostSEXP);
     Rcpp::traits::input_parameter< int >::type port(portSEXP);
-    rcpp_result_gen = Rcpp::wrap(connect(host, port));
+    Rcpp::traits::input_parameter< std::string >::type username(usernameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type password(passwordSEXP);
+    rcpp_result_gen = Rcpp::wrap(connect(host, port, username, password));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -98,6 +100,18 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// listen
+void listen(SEXP xptr, Rcpp::Function callback, Rcpp::Nullable<long int> timeout);
+RcppExport SEXP _rabbitr_listen(SEXP xptrSEXP, SEXP callbackSEXP, SEXP timeoutSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Function >::type callback(callbackSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<long int> >::type timeout(timeoutSEXP);
+    listen(xptr, callback, timeout);
+    return R_NilValue;
+END_RCPP
+}
 // basic_get
 List basic_get(SEXP xptr, int channel, std::string queue, bool no_ack);
 RcppExport SEXP _rabbitr_basic_get(SEXP xptrSEXP, SEXP channelSEXP, SEXP queueSEXP, SEXP no_ackSEXP) {
@@ -157,13 +171,14 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_rabbitr_connect", (DL_FUNC) &_rabbitr_connect, 2},
+    {"_rabbitr_connect", (DL_FUNC) &_rabbitr_connect, 4},
     {"_rabbitr_channel_open", (DL_FUNC) &_rabbitr_channel_open, 2},
     {"_rabbitr_queue_declare", (DL_FUNC) &_rabbitr_queue_declare, 7},
     {"_rabbitr_queue_bind", (DL_FUNC) &_rabbitr_queue_bind, 5},
     {"_rabbitr_queue_unbind", (DL_FUNC) &_rabbitr_queue_unbind, 5},
     {"_rabbitr_queue_purge", (DL_FUNC) &_rabbitr_queue_purge, 3},
     {"_rabbitr_queue_delete", (DL_FUNC) &_rabbitr_queue_delete, 5},
+    {"_rabbitr_listen", (DL_FUNC) &_rabbitr_listen, 3},
     {"_rabbitr_basic_get", (DL_FUNC) &_rabbitr_basic_get, 4},
     {"_rabbitr_basic_cancel", (DL_FUNC) &_rabbitr_basic_cancel, 3},
     {"_rabbitr_basic_publish", (DL_FUNC) &_rabbitr_basic_publish, 7},

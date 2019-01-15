@@ -44,7 +44,7 @@ Connection <- R6::R6Class(
             self$port = port
             self$username = username
             self$password = password
-            self$xptr = amqp_connect(host, port)
+            self$xptr = amqp_connect(host, port, username, password)
         },
 
         channel = function() {
@@ -62,6 +62,9 @@ Connection <- R6::R6Class(
 
 Channel <- R6::R6Class(
     'Channel',
+    private = list(
+        is_consuming = FALSE
+    ),
     public = list(
         conn = NULL,
         channel_number = NULL,
@@ -91,11 +94,19 @@ Channel <- R6::R6Class(
                               if_empty=if_empty)
         },
 
-        basic_consume = function(queue='', consumer_tag=NULL, no_ack=FALSE,
+        basic_consume = function(queue='', consumer_tag='', no_ack=FALSE,
                                  exclusive=FALSE) {
             amqp_basic_consume(self$conn$xptr, self$channel_number,
                                queue=queue, consumer_tag=consumer_tag,
                                no_ack=no_ack, exclusive=exclusive)
+            private$is_consuming = TRUE
+        },
+
+        listen = function(callback, timeout=NULL) {
+            if (!private$is_consuming) {
+                stop('Must start consumer before consuming (basic_consume).')
+            }
+            amqp_listen(self$conn$xptr, callback)
         },
         
         basic_get = function(queue, no_ack=FALSE) {

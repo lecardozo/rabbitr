@@ -21,7 +21,8 @@ void amqp_finalize_connection(amqp_connection_state_t_* conn) {
 }
 
 // [[Rcpp::export("amqp_connect")]]
-SEXP connect(std::string host, int port) {
+SEXP connect(std::string host, int port, std::string username,
+             std::string password) {
     int status;
     amqp_socket_t *socket = NULL;
     amqp_connection_state_t_ *conn;
@@ -35,11 +36,11 @@ SEXP connect(std::string host, int port) {
 
     status = amqp_socket_open(socket, host.c_str(), port);
     if (status != AMQP_STATUS_OK) {
-        Rcout << status << std::endl;
         throw std::range_error("Failed to connect.");
     }
 
-    amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, "guest", "guest");
+    amqp_login(conn, "/", 1, 131072, 0, AMQP_SASL_METHOD_PLAIN,
+               username.c_str(), password.c_str());
 
     Rcpp::XPtr<amqp_connection_state_t_, PreserveStorage, amqp_finalize_connection> xptr(conn, true);
     return xptr;
@@ -111,6 +112,40 @@ void queue_delete(SEXP xptr, int channel, std::string queue,
     amqp_queue_delete(
         conn, channel, queuename, if_unused, if_empty
     );
+}
+
+//[[Rcpp::export("amqp_listen")]]
+void listen(SEXP xptr, Rcpp::Function callback, Rcpp::Nullable<long int> timeout = R_NilValue) {
+    struct timeval *tout;
+    if (timeout.isNull()) {
+        tout = NULL;
+    } else {
+        long int secs = Rcpp::as<long int>(timeout);
+        tout->tv_sec = secs;
+    }
+
+    amqp_connection_state_t conn = get_connection_state(xptr);
+
+    for (;;) {
+        Rcpp::checkUserInterrupt();
+
+        amqp_rpc_reply_t res;
+        amqp_envelope_t envelope;
+        amqp_maybe_release_buffers(conn);
+
+        res = amqp_consume_message(conn, &envelope, tout, 0);
+        if (AMQP_RESPONSE_NORMAL != res.reply_type) {
+            break;
+        }
+
+        char *body_bytes = (char*)malloc(envelope.message.body.len);
+        memcpy(body_bytes, envelope.message.body.bytes,
+                           envelope.message.body.len);
+        std::string body(body_bytes);
+
+        Rcout << body << std::endl;
+
+    }
 }
 
 // [[Rcpp::export("amqp_basic_get")]]
