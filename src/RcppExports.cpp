@@ -101,13 +101,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // listen
-void listen(SEXP xptr, Rcpp::Function callback, Rcpp::Nullable<long int> timeout);
+void listen(SEXP xptr, Rcpp::Function callback, Rcpp::Nullable<int> timeout);
 RcppExport SEXP _rabbitr_listen(SEXP xptrSEXP, SEXP callbackSEXP, SEXP timeoutSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
     Rcpp::traits::input_parameter< Rcpp::Function >::type callback(callbackSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable<long int> >::type timeout(timeoutSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type timeout(timeoutSEXP);
     listen(xptr, callback, timeout);
     return R_NilValue;
 END_RCPP

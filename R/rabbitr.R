@@ -106,7 +106,7 @@ Channel <- R6::R6Class(
             if (!private$is_consuming) {
                 stop('Must start consumer before consuming (basic_consume).')
             }
-            amqp_listen(self$conn$xptr, callback)
+            amqp_listen(self$conn$xptr, callback, timeout=timeout)
         },
         
         basic_get = function(queue, no_ack=FALSE) {
@@ -134,12 +134,22 @@ Channel <- R6::R6Class(
                                requeue=requeue)
         },
 
-        basic_publish = function(exchange, routing_key, body, properties=NULL,
+        basic_publish = function(exchange, routing_key, body,
+                                 properties=message_properties(),
                                  mandatory=FALSE, immediate=FALSE) {
             amqp_basic_publish(self$conn$xptr, self$channel_number,
                                exchange=exchange, routing_key=routing_key,
-                               body=body, mandatory=mandatory,
-                               immediate=immediate)
+                               body=body, properties=properties,
+                               mandatory=mandatory, immediate=immediate)
         }
     )
 )
+
+
+message_properties <- function(content_type="text/plain", content_encoding="",
+                       delivery_mode=1, priority=0, correlation_id=NULL,
+                       reply_to="", expiration="", message_id="",
+                       timestamp="", message_type="", user_id="",
+                       app_id="") {
+    return(as.list(environment(), all=TRUE))
+}

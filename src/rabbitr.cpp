@@ -1,3 +1,4 @@
+// [[Rcpp::plugins(cpp11)]]
 #include <Rcpp.h>
 #include <string>
 #include <amqp.h>
@@ -5,7 +6,64 @@
 
 using namespace Rcpp;
 
-// [[Rcpp::plugins(cpp11)]]
+amqp_bytes_t rstr_to_bytes(SEXP a) {
+    return amqp_cstring_bytes(Rcpp::as<std::string>(a).c_str());
+}
+
+amqp_basic_properties_t convert_properties(List r_props) {
+    amqp_basic_properties_t amqp_props;
+    amqp_props.content_type = rstr_to_bytes(r_props["content_type"]);
+    amqp_props.content_encoding = rstr_to_bytes(r_props["content_encoding"]);
+    amqp_props.correlation_id = rstr_to_bytes(r_props["correlation_id"]);
+    amqp_props.reply_to = rstr_to_bytes(r_props["reply_to"]);
+    amqp_props.expiration = rstr_to_bytes(r_props["expiration"]);
+    amqp_props.message_id = rstr_to_bytes(r_props["message_id"]);
+    return amqp_props;
+}
+
+List rabbitr_message(amqp_message_t message) {
+    amqp_basic_properties_t props = message.properties;
+
+    std::string content_type((char *) props.content_type.bytes,
+                             props.content_type.len);
+    std::string content_encoding((char *) props.content_encoding.bytes,
+                                 props.content_encoding.len);
+    std::string correlation_id((char *) props.correlation_id.bytes,
+                               props.correlation_id.len);
+    std::string reply_to((char *) props.reply_to.bytes, props.reply_to.len);
+    std::string expiration((char *)props.expiration.bytes, props.expiration.len);
+    std::string message_id((char *)props.message_id.bytes, props.message_id.len);
+    std::string body((char *)message.body.bytes, message.body.len);
+
+    return List::create(
+        Named("properties") = List::create(
+            Named("content_type") = String(content_type),
+            Named("content_encoding") = String(content_encoding),
+            Named("delivery_mode") = (int) props.delivery_mode,
+            Named("priority") = (int) props.priority,
+            Named("correlation_id") = String(correlation_id),
+            Named("reply_to") = String(reply_to),
+            Named("expiration") = String(expiration),
+            Named("message_id") = String(message_id),
+            Named("timestamp") = (long int) props.timestamp
+        ),
+        Named("body") = String(body)
+    );
+}
+
+List rabbitr_envelope(amqp_envelope_t envelope) {
+    std::string exchange((char *) envelope.exchange.bytes,
+                         envelope.exchange.len);
+    std::string routing_key((char *)envelope.routing_key.bytes,
+                            envelope.routing_key.len);
+
+    return Rcpp::List::create(
+        Rcpp::Named("delivery_tag") = envelope.delivery_tag,
+        Rcpp::Named("routing_key") = String(routing_key),
+        Rcpp::Named("exchange") = String(exchange),
+        Rcpp::Named("message") = rabbitr_message(envelope.message)
+    );
+}
 
 amqp_connection_state_t_* get_connection_state(SEXP xptr) {
     if (TYPEOF(xptr) != EXTPTRSXP) {
@@ -115,16 +173,22 @@ void queue_delete(SEXP xptr, int channel, std::string queue,
 }
 
 //[[Rcpp::export("amqp_listen")]]
-void listen(SEXP xptr, Rcpp::Function callback, Rcpp::Nullable<long int> timeout = R_NilValue) {
+void listen(SEXP xptr, Rcpp::Function callback,
+            Rcpp::Nullable<int> timeout = R_NilValue) {
+    struct timeval tval;
     struct timeval *tout;
+
     if (timeout.isNull()) {
         tout = NULL;
     } else {
-        long int secs = Rcpp::as<long int>(timeout);
+        tout = &tval;
+        int secs = Rcpp::as<int>(timeout);
         tout->tv_sec = secs;
+        tout->tv_usec = 0;
     }
 
     amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_frame_t frame;
 
     for (;;) {
         Rcpp::checkUserInterrupt();
@@ -134,17 +198,18 @@ void listen(SEXP xptr, Rcpp::Function callback, Rcpp::Nullable<long int> timeout
         amqp_maybe_release_buffers(conn);
 
         res = amqp_consume_message(conn, &envelope, tout, 0);
+
         if (AMQP_RESPONSE_NORMAL != res.reply_type) {
-            break;
+            if (AMQP_RESPONSE_LIBRARY_EXCEPTION == res.reply_type &&
+                AMQP_STATUS_UNEXPECTED_STATE == res.library_error) {
+                if (AMQP_STATUS_OK != amqp_simple_wait_frame(conn, &frame)) {
+                    break;
+                }
+            }
+        } else {
+            callback(rabbitr_envelope(envelope));
         }
-
-        char *body_bytes = (char*)malloc(envelope.message.body.len);
-        memcpy(body_bytes, envelope.message.body.bytes,
-                           envelope.message.body.len);
-        std::string body(body_bytes);
-
-        Rcout << body << std::endl;
-
+        amqp_destroy_envelope(&envelope);
     }
 }
 
@@ -176,10 +241,9 @@ void basic_cancel(SEXP xptr, int channel, std::string consumer_tag) {
 // [[Rcpp::export("amqp_basic_publish")]]
 void basic_publish(SEXP xptr, int channel, std::string exchange,
                    std::string routing_key, bool mandatory,
-                   bool immediate, std::string body) {
+                   bool immediate, std::string body, List properties) {
 
-    amqp_basic_properties_t props;
-    props.content_type = amqp_cstring_bytes("text/plain");
+    amqp_basic_properties_t props= convert_properties(properties),
     amqp_connection_state_t conn = get_connection_state(xptr);
     amqp_basic_publish(conn, channel,
                        amqp_cstring_bytes(exchange.c_str()),
