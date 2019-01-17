@@ -243,7 +243,7 @@ void basic_publish(SEXP xptr, int channel, std::string exchange,
                    std::string routing_key, bool mandatory,
                    bool immediate, std::string body, List properties) {
 
-    amqp_basic_properties_t props= convert_properties(properties),
+    amqp_basic_properties_t props= convert_properties(properties);
     amqp_connection_state_t conn = get_connection_state(xptr);
     amqp_basic_publish(conn, channel,
                        amqp_cstring_bytes(exchange.c_str()),
