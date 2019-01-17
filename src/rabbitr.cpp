@@ -45,17 +45,26 @@ void channel_close(SEXP xptr, int channel) {
     amqp_channel_close(conn, channel, AMQP_REPLY_SUCCESS);
 }
 
+
 //[[Rcpp::export("amqp_exchange_declare")]]
 void exchange_declare(SEXP xptr, int channel, std::string exchange,
                       std::string type, bool passive, bool durable,
                       bool auto_delete, bool internal) {
     amqp_connection_state_t conn = get_connection_state(xptr);
+    #if (AMQP_VERSION_MINOR >= 6) && (AMQP_VERSION_PATCH >= 0)
     amqp_exchange_declare(conn, channel,
             amqp_cstring_bytes(exchange.c_str()),
             amqp_cstring_bytes(type.c_str()),
             passive, durable, auto_delete, internal,
             amqp_empty_table
     );
+    #else
+    amqp_exchange_declare(conn, channel,
+            amqp_cstring_bytes(exchange.c_str()),
+            amqp_cstring_bytes(type.c_str()),
+            passive, durable, amqp_empty_table
+    );
+    #endif
 }
 
 //[[Rcpp::export("amqp_exchange_delete")]]
