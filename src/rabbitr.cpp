@@ -3,80 +3,9 @@
 #include <string>
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
+#include "utils.h"
 
 using namespace Rcpp;
-
-amqp_bytes_t rstr_to_bytes(SEXP a) {
-    return amqp_cstring_bytes(Rcpp::as<std::string>(a).c_str());
-}
-
-amqp_basic_properties_t convert_properties(List r_props) {
-    amqp_basic_properties_t amqp_props;
-    amqp_props.content_type = rstr_to_bytes(r_props["content_type"]);
-    amqp_props.content_encoding = rstr_to_bytes(r_props["content_encoding"]);
-    amqp_props.correlation_id = rstr_to_bytes(r_props["correlation_id"]);
-    amqp_props.reply_to = rstr_to_bytes(r_props["reply_to"]);
-    amqp_props.expiration = rstr_to_bytes(r_props["expiration"]);
-    amqp_props.message_id = rstr_to_bytes(r_props["message_id"]);
-    return amqp_props;
-}
-
-List rabbitr_message(amqp_message_t message) {
-    amqp_basic_properties_t props = message.properties;
-
-    std::string content_type((char *) props.content_type.bytes,
-                             props.content_type.len);
-    std::string content_encoding((char *) props.content_encoding.bytes,
-                                 props.content_encoding.len);
-    std::string correlation_id((char *) props.correlation_id.bytes,
-                               props.correlation_id.len);
-    std::string reply_to((char *) props.reply_to.bytes, props.reply_to.len);
-    std::string expiration((char *)props.expiration.bytes, props.expiration.len);
-    std::string message_id((char *)props.message_id.bytes, props.message_id.len);
-    std::string body((char *)message.body.bytes, message.body.len);
-
-    return List::create(
-        Named("properties") = List::create(
-            Named("content_type") = String(content_type),
-            Named("content_encoding") = String(content_encoding),
-            Named("delivery_mode") = (int) props.delivery_mode,
-            Named("priority") = (int) props.priority,
-            Named("correlation_id") = String(correlation_id),
-            Named("reply_to") = String(reply_to),
-            Named("expiration") = String(expiration),
-            Named("message_id") = String(message_id),
-            Named("timestamp") = (long int) props.timestamp
-        ),
-        Named("body") = String(body)
-    );
-}
-
-List rabbitr_envelope(amqp_envelope_t envelope) {
-    std::string exchange((char *) envelope.exchange.bytes,
-                         envelope.exchange.len);
-    std::string routing_key((char *)envelope.routing_key.bytes,
-                            envelope.routing_key.len);
-
-    return Rcpp::List::create(
-        Rcpp::Named("delivery_tag") = envelope.delivery_tag,
-        Rcpp::Named("routing_key") = String(routing_key),
-        Rcpp::Named("exchange") = String(exchange),
-        Rcpp::Named("message") = rabbitr_message(envelope.message)
-    );
-}
-
-amqp_connection_state_t_* get_connection_state(SEXP xptr) {
-    if (TYPEOF(xptr) != EXTPTRSXP) {
-        throw std::range_error("Expected an external pointer");
-    }
-    Rcpp::XPtr<amqp_connection_state_t_> conn(xptr);
-    return conn;
-}
-
-void amqp_finalize_connection(amqp_connection_state_t_* conn) {
-    amqp_connection_close(conn, AMQP_REPLY_SUCCESS);
-    amqp_destroy_connection(conn);
-}
 
 // [[Rcpp::export("amqp_connect")]]
 SEXP connect(std::string host, int port, std::string username,

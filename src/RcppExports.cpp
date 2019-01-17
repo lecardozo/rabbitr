@@ -139,8 +139,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // basic_publish
-void basic_publish(SEXP xptr, int channel, std::string exchange, std::string routing_key, bool mandatory, bool immediate, std::string body);
-RcppExport SEXP _rabbitr_basic_publish(SEXP xptrSEXP, SEXP channelSEXP, SEXP exchangeSEXP, SEXP routing_keySEXP, SEXP mandatorySEXP, SEXP immediateSEXP, SEXP bodySEXP) {
+void basic_publish(SEXP xptr, int channel, std::string exchange, std::string routing_key, bool mandatory, bool immediate, std::string body, List properties);
+RcppExport SEXP _rabbitr_basic_publish(SEXP xptrSEXP, SEXP channelSEXP, SEXP exchangeSEXP, SEXP routing_keySEXP, SEXP mandatorySEXP, SEXP immediateSEXP, SEXP bodySEXP, SEXP propertiesSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
@@ -150,7 +150,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type mandatory(mandatorySEXP);
     Rcpp::traits::input_parameter< bool >::type immediate(immediateSEXP);
     Rcpp::traits::input_parameter< std::string >::type body(bodySEXP);
-    basic_publish(xptr, channel, exchange, routing_key, mandatory, immediate, body);
+    Rcpp::traits::input_parameter< List >::type properties(propertiesSEXP);
+    basic_publish(xptr, channel, exchange, routing_key, mandatory, immediate, body, properties);
     return R_NilValue;
 END_RCPP
 }
@@ -181,7 +182,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rabbitr_listen", (DL_FUNC) &_rabbitr_listen, 3},
     {"_rabbitr_basic_get", (DL_FUNC) &_rabbitr_basic_get, 4},
     {"_rabbitr_basic_cancel", (DL_FUNC) &_rabbitr_basic_cancel, 3},
-    {"_rabbitr_basic_publish", (DL_FUNC) &_rabbitr_basic_publish, 7},
+    {"_rabbitr_basic_publish", (DL_FUNC) &_rabbitr_basic_publish, 8},
     {"_rabbitr_basic_consume", (DL_FUNC) &_rabbitr_basic_consume, 6},
     {NULL, NULL, 0}
 };
