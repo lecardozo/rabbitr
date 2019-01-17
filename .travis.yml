@@ -12,8 +12,6 @@ apt_packages:
 
 matrix:
     include:
-        - name: "Trusty"
-          dist: trusty
         - name: "Xenial"
           dist: xenial
           before_install:
