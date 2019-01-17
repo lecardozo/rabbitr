@@ -13,7 +13,7 @@ matrix:
         - name: "Xenial"
           dist: xenial
           before_install:
-              - apt-get install rabbitmq-server
+              - sudo apt-get install rabbitmq-server
         - name: "OSX"
           os: osx
           brew_packages: rabbitmq-c
