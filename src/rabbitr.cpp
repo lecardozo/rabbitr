@@ -45,6 +45,53 @@ void channel_close(SEXP xptr, int channel) {
     amqp_channel_close(conn, channel, AMQP_REPLY_SUCCESS);
 }
 
+//[[Rcpp::export("amqp_exchange_declare")]]
+void exchange_declare(SEXP xptr, int channel, std::string exchange,
+                      std::string type, bool passive, bool durable,
+                      bool auto_delete, bool internal) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_exchange_declare(conn, channel,
+            amqp_cstring_bytes(exchange.c_str()),
+            amqp_cstring_bytes(type.c_str()),
+            passive, durable, auto_delete, internal,
+            amqp_empty_table
+    );
+}
+
+//[[Rcpp::export("amqp_exchange_delete")]]
+void exchange_delete(SEXP xptr, int channel, std::string exchange,
+                     bool if_unused) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_exchange_delete(conn, channel,
+            amqp_cstring_bytes(exchange.c_str()),
+            if_unused
+    );
+}
+
+//[[Rcpp::export("amqp_exchange_bind")]]
+void exchange_bind(SEXP xptr, int channel, std::string destination,
+                   std::string source, std::string routing_key) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_exchange_bind(conn, channel,
+            amqp_cstring_bytes(destination.c_str()),
+            amqp_cstring_bytes(source.c_str()),
+            amqp_cstring_bytes(routing_key.c_str()),
+            amqp_empty_table
+    );
+}
+
+//[[Rcpp::export("amqp_exchange_unbind")]]
+void exchange_unbind(SEXP xptr, int channel, std::string destination,
+                     std::string source, std::string routing_key) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_exchange_unbind(conn, channel,
+            amqp_cstring_bytes(destination.c_str()),
+            amqp_cstring_bytes(source.c_str()),
+            amqp_cstring_bytes(routing_key.c_str()),
+            amqp_empty_table
+    );
+}
+
 // [[Rcpp::export("amqp_queue_declare")]]
 void queue_declare(SEXP xptr, int channel, std::string queue,
                    bool passive, bool durable, bool exclusive,
@@ -56,6 +103,23 @@ void queue_declare(SEXP xptr, int channel, std::string queue,
         conn, channel, queuename, passive,
         durable, exclusive, auto_delete, amqp_empty_table
     );
+}
+
+// [[Rcpp::export("amqp_queue_delete")]]
+void queue_delete(SEXP xptr, int channel, std::string queue,
+                  bool if_unused, bool if_empty) {
+    amqp_bytes_t queuename;
+    queuename = amqp_cstring_bytes(queue.c_str());
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_queue_delete(
+        conn, channel, queuename, if_unused, if_empty
+    );
+}
+
+// [[Rcpp::export("amqp_queue_purge")]]
+void queue_purge(SEXP xptr, int channel, std::string queue) {
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_queue_purge(conn, channel, amqp_cstring_bytes(queue.c_str()));
 }
 
 // [[Rcpp::export("amqp_queue_bind")]]
@@ -84,63 +148,6 @@ void queue_unbind(SEXP xptr, int channel, std::string queue,
     );
 }
 
-// [[Rcpp::export("amqp_queue_purge")]]
-void queue_purge(SEXP xptr, int channel, std::string queue) {
-    amqp_connection_state_t conn = get_connection_state(xptr);
-    amqp_queue_purge(conn, channel, amqp_cstring_bytes(queue.c_str()));
-}
-
-// [[Rcpp::export("amqp_queue_delete")]]
-void queue_delete(SEXP xptr, int channel, std::string queue,
-                  bool if_unused, bool if_empty) {
-    amqp_bytes_t queuename;
-    queuename = amqp_cstring_bytes(queue.c_str());
-    amqp_connection_state_t conn = get_connection_state(xptr);
-    amqp_queue_delete(
-        conn, channel, queuename, if_unused, if_empty
-    );
-}
-
-//[[Rcpp::export("amqp_listen")]]
-void listen(SEXP xptr, Rcpp::Function callback,
-            Rcpp::Nullable<int> timeout = R_NilValue) {
-    struct timeval tval;
-    struct timeval *tout;
-
-    if (timeout.isNull()) {
-        tout = NULL;
-    } else {
-        tout = &tval;
-        int secs = Rcpp::as<int>(timeout);
-        tout->tv_sec = secs;
-        tout->tv_usec = 0;
-    }
-
-    amqp_connection_state_t conn = get_connection_state(xptr);
-    amqp_frame_t frame;
-
-    for (;;) {
-        Rcpp::checkUserInterrupt();
-
-        amqp_rpc_reply_t res;
-        amqp_envelope_t envelope;
-        amqp_maybe_release_buffers(conn);
-
-        res = amqp_consume_message(conn, &envelope, tout, 0);
-
-        if (AMQP_RESPONSE_NORMAL != res.reply_type) {
-            if (AMQP_RESPONSE_LIBRARY_EXCEPTION == res.reply_type &&
-                AMQP_STATUS_UNEXPECTED_STATE == res.library_error) {
-                if (AMQP_STATUS_OK != amqp_simple_wait_frame(conn, &frame)) {
-                    break;
-                }
-            }
-        } else {
-            callback(rabbitr_envelope(envelope));
-        }
-        amqp_destroy_envelope(&envelope);
-    }
-}
 
 // [[Rcpp::export("amqp_basic_get")]]
 List basic_get(SEXP xptr, int channel, std::string queue, 
@@ -219,4 +226,45 @@ void basic_reject(SEXP xptr, int channel, int delivery_tag,
 void basic_recover(SEXP xptr, int channel, bool requeue) {
     amqp_connection_state_t conn = get_connection_state(xptr);
     amqp_basic_recover(conn, channel, requeue);
+}
+
+//[[Rcpp::export("amqp_listen")]]
+void listen(SEXP xptr, Rcpp::Function callback,
+            Rcpp::Nullable<int> timeout = R_NilValue) {
+    struct timeval tval;
+    struct timeval *tout;
+
+    if (timeout.isNull()) {
+        tout = NULL;
+    } else {
+        tout = &tval;
+        int secs = Rcpp::as<int>(timeout);
+        tout->tv_sec = secs;
+        tout->tv_usec = 0;
+    }
+
+    amqp_connection_state_t conn = get_connection_state(xptr);
+    amqp_frame_t frame;
+
+    for (;;) {
+        Rcpp::checkUserInterrupt();
+
+        amqp_rpc_reply_t res;
+        amqp_envelope_t envelope;
+        amqp_maybe_release_buffers(conn);
+
+        res = amqp_consume_message(conn, &envelope, tout, 0);
+
+        if (AMQP_RESPONSE_NORMAL != res.reply_type) {
+            if (AMQP_RESPONSE_LIBRARY_EXCEPTION == res.reply_type &&
+                AMQP_STATUS_UNEXPECTED_STATE == res.library_error) {
+                if (AMQP_STATUS_OK != amqp_simple_wait_frame(conn, &frame)) {
+                    break;
+                }
+            }
+        } else {
+            callback(rabbitr_envelope(envelope));
+        }
+        amqp_destroy_envelope(&envelope);
+    }
 }

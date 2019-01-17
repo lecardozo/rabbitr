@@ -1,3 +1,5 @@
 language: r
+services:
+    - rabbitmq
 apt_packages:
     - librabbitmq-dev

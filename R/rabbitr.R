@@ -40,16 +40,16 @@ Connection <- R6::R6Class(
 
         initialize = function(host='localhost', port=5672,
                               username='guest', password='guest') {
-            self$host = host
-            self$port = port
-            self$username = username
-            self$password = password
-            self$xptr = amqp_connect(host, port, username, password)
+            self$host <- host
+            self$port <- port
+            self$username <- username
+            self$password <- password
+            self$xptr <- amqp_connect(host, port, username, password)
         },
 
         channel = function() {
-            ch = Channel$new(self, private$current_channel)
-            private$current_channel = private$current_channel + 1
+            ch <- Channel$new(self, private$current_channel)
+            private$current_channel <- private$current_channel + 1
             return(ch)
         }
     ),
@@ -60,6 +60,74 @@ Connection <- R6::R6Class(
     )
 )
 
+#' RabbitMQ Channel object
+#'
+#' This class defines all AMQP Channel methods and functionality.
+#'
+#' @section Usage:
+#' For more details see \bold{Methods, Arguments and Examples} sections.
+#' \preformatted{
+#' conn <- rabbitr()
+#' chan <- conn$channel()
+#' chan$exchange_declare(exchange, type, passive=FALSE,
+#'                    durable=FALSE, auto_delete=FALSE)
+#' chan$exchange_bind(destination, source, routing_key)
+#' chan$exchange_unbind(destination, source, routing_key)
+#' chan$exchange_delete(exchange, if_unused=FALSE)
+#'
+#' chan$queue_declare(queue="", passive=FALSE,
+#'                    durable=FALSE, auto_delete=FALSE)
+#' chan$queue_bind(queue, exchange, routing_key)
+#' chan$queue_unbind(queue, exchange, routing_key)
+#' chan$queue_purge(queue)
+#' chan$queue_delete(queue, if_unused=FALSE, if_empty=FALSE)
+#'
+#' chan$basic_consume(queue="", consumer_tag="",
+#'                    no_ack=FALSE, exclusive=FALSE)
+#' chan$basic_get(queue, no_ack=FALSE)
+#' chan$basic_ack(delivery_tag, multiple=FALSE)
+#' chan$basic_qos(prefetch_size=0, prefetch_count=0, global=FALSE)
+#' chan$basic_reject(delivery_tag, requeue=TRUE)
+#' chan$basic_recover(requeue=TRUE)
+#' chan$basic_publish(exchange, routing_key, body, 
+#'                    properties=message_properties(),
+#'                    mandatory=FALSE, immediate=FALSE)
+#'
+#' chan$listen(callback, timeout=NULL)
+#' } 
+#' 
+#' @section Methods:
+#' \describe{
+#'    \item{\code{$new(conn, channel_number)}}{Create new Channel instance. This 
+#'          should not be used directly. Instead, construct the channel by 
+#'          calling the active connection `$channel()` method.}
+#'    \item{\code{$exchange_declare()}}{Declare/create exchange.}
+#'    \item{\code{$exchange_delete()}}{Delete exchange.}
+#'    \item{\code{$exchange_bind()}}{Bind exchange to another exchange.}
+#'    \item{\code{$exchange_unbind()}}{Unbind exchange from another exchange.}
+#'    \item{\code{$queue_declare()}}{Declare/create queue.}
+#'    \item{\code{$queue_delete()}}{Delete queue.}
+#'    \item{\code{$queue_purge()}}{Purge all messages from specified queue.}
+#'    \item{\code{$queue_bind()}}{Bind queue to exchange.}
+#'    \item{\code{$queue_unbind()}}{Unbind queue from a exchange.}
+#'    \item{\code{$basic_consume()}}{Sends the AMQP 0-9-1 Basic.Consume 
+#'    command to broker.}
+#'    \item{\code{$basic_get()}}{Get a single message from the AMQP broker.}
+#'    \item{\code{$basic_ack()}}{Acknowledge one or more messages.}
+#'    \item{\code{$basic_qos()}}{Specify quality of service.}
+#'    \item{\code{$basic_reject()}}{Reject an incoming message.}
+#'    \item{\code{$basic_recover()}}{Ask server to redeliver all unacknowledged 
+#'     messages on Channel.}
+#'    \item{\code{$basic_publish()}}{Publish to the channel with the given
+#'    exchange, routing_key and message body.}
+#' }
+#'
+#' @rdname Channel
+#' @name Channel 
+#'
+NULL
+
+#' @export
 Channel <- R6::R6Class(
     'Channel',
     private = list(
@@ -69,12 +137,35 @@ Channel <- R6::R6Class(
         conn = NULL,
         channel_number = NULL,
         initialize = function(conn, channel_number) {
-            self$conn = conn
-            self$channel_number = channel_number
+            self$conn <- conn
+            self$channel_number <- channel_number
             amqp_channel_open(self$conn$xptr, channel_number)
         },
 
-        queue_declare = function(queue, passive=FALSE, durable=FALSE,
+        exchange_declare = function(exchange, type, passive=FALSE,
+                                    durable=FALSE, auto_delete=FALSE,
+                                    internal=FALSE) {
+            amqp_exchange_declare(self$conn$xptr, self$channel_number,
+                                  exchange, type, passive, durable,
+                                  auto_delete)
+        },
+
+        exchange_delete = function(destination, source, routing_key) {
+            amqp_exchange_delete(self$conn$xptr, self$channel_number,
+                                 exchange, if_unused=FALSE)
+        },
+
+        exchange_bind = function(destination, source, routing_key) {
+            amqp_exchange_bind(self$conn$xptr, self$channel_number,
+                               destination, source, routing_key)
+        },
+
+        exchange_unbind = function(destination, source, routing_key) {
+            amqp_exchange_unbind(self$conn$xptr, self$channel_number,
+                                 destination, source, routing_key)
+        },
+
+        queue_declare = function(queue="", passive=FALSE, durable=FALSE,
                                  exclusive=FALSE, auto_delete=FALSE) {
             amqp_queue_declare(self$conn$xptr, self$channel_number,
                                queue, passive=passive, durable=durable,
@@ -82,34 +173,46 @@ Channel <- R6::R6Class(
                                auto_delete=auto_delete)
         },
 
-        queue_bind = function(queue, exchange, routing_key) {
-            amqp_queue_bind(self$conn$xptr, self$channel_number,
-                            queue=queue, exchange=exchange,
-                            routing_key=routing_key)
+        queue_purge = function(queue) {
+            if (missing(queue)) {
+                stop("Must provide queue name.")
+            }
+            amqp_queue_purge(self$conn$xptr, self$channel_number, queue)
         },
 
-        queue_delete = function(queue, if_unused=FALSE, if_empty=FALSE) {
+        queue_delete = function(queue="", if_unused=FALSE, if_empty=FALSE) {
             amqp_queue_delete(self$conn$xptr, self$channel_number,
                               queue, if_unused=if_unused,
                               if_empty=if_empty)
         },
 
-        basic_consume = function(queue='', consumer_tag='', no_ack=FALSE,
+        queue_bind = function(queue, exchange, routing_key) {
+            if (missing(queue) | missing(exchange) | missing(routing_key)) {
+                stop("All arguments are required")
+            }
+            amqp_queue_bind(self$conn$xptr, self$channel_number,
+                            queue=queue, exchange=exchange,
+                            routing_key=routing_key)
+        },
+
+        queue_unbind = function(queue, exchange, routing_key) {
+            if (missing(queue) | missing(exchange) | missing(routing_key)) {
+                stop("All arguments are required")
+            }
+            amqp_queue_bind(self$conn$xptr, self$channel_number,
+                            queue=queue, exchange=exchange,
+                            routing_key=routing_key)
+        },
+
+        basic_consume = function(queue="", consumer_tag="", no_ack=FALSE,
                                  exclusive=FALSE) {
             amqp_basic_consume(self$conn$xptr, self$channel_number,
                                queue=queue, consumer_tag=consumer_tag,
                                no_ack=no_ack, exclusive=exclusive)
-            private$is_consuming = TRUE
+            private$is_consuming <- TRUE
         },
 
-        listen = function(callback, timeout=NULL) {
-            if (!private$is_consuming) {
-                stop('Must start consumer before consuming (basic_consume).')
-            }
-            amqp_listen(self$conn$xptr, callback, timeout=timeout)
-        },
-        
-        basic_get = function(queue, no_ack=FALSE) {
+        basic_get = function(queue="", no_ack=FALSE) {
             amqp_basic_get(self$conn$xptr, self$channel_number, queue, no_ack)
         },
 
@@ -121,7 +224,7 @@ Channel <- R6::R6Class(
         basic_qos = function(prefetch_size=0, prefetch_count=0, global=FALSE) {
             amqp_basic_qos(self$conn$xptr, self$channel_number,
                            prefetch_size=prefetch_size,
-                           prefetch_count=prefetch_count)
+                           prefetch_count=prefetch_count, global=global)
         },
 
         basic_reject = function(delivery_tag, requeue=TRUE) {
@@ -141,6 +244,13 @@ Channel <- R6::R6Class(
                                exchange=exchange, routing_key=routing_key,
                                body=body, properties=properties,
                                mandatory=mandatory, immediate=immediate)
+        },
+        
+        listen = function(callback, timeout=NULL) {
+            if (!private$is_consuming) {
+                stop('Must start consumer before consuming (basic_consume).')
+            }
+            amqp_listen(self$conn$xptr, callback, timeout=timeout)
         }
     )
 )
