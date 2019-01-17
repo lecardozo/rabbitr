@@ -1,8 +1,8 @@
 Package: rabbitr
-Title: RabbitMQ client for R
+Title: RabbitMQ Client For R
 Version: 0.0.0.9000
 Authors@R: person("Lucas", "Cardozo", email = "lucasecardozo@gmail.com", role = c("aut", "cre"))
-Description: rabbitr is a RabbitMQ client in R built on top of rabbitmq-c client.
+Description: RabbitMQ client implemented in R on top of rabbitmq-c client.
 URL: https://github.com/lecardozo/rabbitr
 BugReports: https://github.com/lecardozo/rabbitr/issues
 Depends: R (>= 3.4)
@@ -13,6 +13,7 @@ LinkingTo: Rcpp
 Imports:
     R6,
     Rcpp
+SystemRequirements: rabbitmq-c (https://githb.com/alanxz/rabbitmq-c)
 RoxygenNote: 6.1.1
 Suggests: 
     testthat
