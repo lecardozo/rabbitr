@@ -1,5 +1,17 @@
 language: r
+
 services:
     - rabbitmq
+
+matrix:
+    include:
+        - name: "Trusty"
+          dist: trusty
+        - name: "Xenial"
+          dist: xenial
+        - name: "OSX"
+          os: osx
+          brew_packages: rabbitmq-c
+
 apt_packages:
     - librabbitmq-dev
