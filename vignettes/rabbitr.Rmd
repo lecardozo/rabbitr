@@ -1,0 +1,49 @@
+---
+title: "RabbitMQ messaging in R"
+author: "Lucas Cardozo"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{RabbitMQ messaging in R}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+`rabbitr` is an R package for sending/receiving messages to/from RabbitMQ 
+(or any other broker that implements the AMQP 0-9-1 specification). This package is built on top 
+of the `rabbitmq-c` library. For more information on how to install it,
+check the README.
+
+
+In order to start publishing or consuming messages, we first need to connect to the broker.
+This is done with the `rabbitr` function. The arguments of this function (`host` and `port`)
+define the location of the RabbitMQ server that we'll be connecting. This returns a 
+`Connection` R6 object that will be used to create the channel for our communication with the server.
+```r
+library(rabbitr)
+
+conn <- rabbitr(host='localhost', port=5672)
+```
+
+To create a channel, we just call the `$channel` method on the `conn` object. This method
+returns the `Channel` R6 object that exposes all AMQP methods.
+```r
+chan <- conn$channel()
+```
+
+Now, we can use the `Channel` object to publish or consume messages.
+
+### Sending messages
+Before sending any messages to a queue, we first need to make sure this queue actually exists
+in the broker so, let's declare it. Here we will declare a queue called 'test'.
+```r
+chan$queue_declare('test')
+```
+
+With our 'test' queue already declared, we can now send a message to it, using the `$basic_publish`
+method. If you are already familiar with the AMQP protocol, you probably now that messages are sent
+to exchanges and not directly to queues. If we want to sent our messages directly to our queue,
+we need to send it to the default exchange ("") with the `routing_key` parameter set to our queue name ("test").
+```r
+chan$basic_publish(exchange="", routing_key="test", body="this is my message")
+```

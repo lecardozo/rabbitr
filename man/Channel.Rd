@@ -25,7 +25,7 @@ chan$queue_unbind(queue, exchange, routing_key)
 chan$queue_purge(queue)
 chan$queue_delete(queue, if_unused=FALSE, if_empty=FALSE)
 
-chan$basic_consume(queue="", consumer_tag="",
+chan$basic_consume(callback, queue="", consumer_tag="",
                    no_ack=FALSE, exclusive=FALSE)
 chan$basic_get(queue, no_ack=FALSE)
 chan$basic_ack(delivery_tag, multiple=FALSE)
@@ -36,7 +36,7 @@ chan$basic_publish(exchange, routing_key, body,
                    properties=message_properties(),
                    mandatory=FALSE, immediate=FALSE)
 
-chan$listen(callback, timeout=NULL)
+chan$start_consuming(timeout=NULL)
 }
 }
 

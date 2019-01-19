@@ -16,4 +16,7 @@ Imports:
 SystemRequirements: rabbitmq-c (https://githb.com/alanxz/rabbitmq-c)
 RoxygenNote: 6.1.1
 Suggests: 
-    testthat
+    testthat,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
