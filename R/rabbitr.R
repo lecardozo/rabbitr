@@ -82,7 +82,7 @@ Connection <- R6::R6Class(
 #' chan$queue_purge(queue)
 #' chan$queue_delete(queue, if_unused=FALSE, if_empty=FALSE)
 #'
-#' chan$basic_consume(queue="", consumer_tag="",
+#' chan$basic_consume(callback, queue="", consumer_tag="",
 #'                    no_ack=FALSE, exclusive=FALSE)
 #' chan$basic_get(queue, no_ack=FALSE)
 #' chan$basic_ack(delivery_tag, multiple=FALSE)
@@ -93,7 +93,7 @@ Connection <- R6::R6Class(
 #'                    properties=message_properties(),
 #'                    mandatory=FALSE, immediate=FALSE)
 #'
-#' chan$listen(callback, timeout=NULL)
+#' chan$start_consuming(timeout=NULL)
 #' } 
 #' 
 #' @section Methods:
@@ -131,7 +131,9 @@ NULL
 Channel <- R6::R6Class(
     'Channel',
     private = list(
-        is_consuming = FALSE
+        exchanges = list(),
+        queues = list(),
+        queue_callbacks = list()
     ),
     public = list(
         conn = NULL,
@@ -145,14 +147,24 @@ Channel <- R6::R6Class(
         exchange_declare = function(exchange, type, passive=FALSE,
                                     durable=FALSE, auto_delete=FALSE,
                                     internal=FALSE) {
+            private$exchanges <- append(
+                private$exchanges,
+                list(list(name=exchange, type=type, passive=passive,
+                     durable=durable, auto_delete=auto_delete))
+            )
+
             amqp_exchange_declare(self$conn$xptr, self$channel_number,
                                   exchange, type, passive, durable,
                                   auto_delete)
         },
 
-        exchange_delete = function(destination, source, routing_key) {
+        exchange_delete = function(exchange, if_unused=FALSE) {
+            to_keep <- lapply(private$exchanges, function(exchange){
+                (exchange$name != exchange)
+            })
+            private$exchanges <- private$exchanges[to_keep]
             amqp_exchange_delete(self$conn$xptr, self$channel_number,
-                                 exchange, if_unused=FALSE)
+                                 exchange, if_unused=if_unused)
         },
 
         exchange_bind = function(destination, source, routing_key) {
@@ -167,6 +179,12 @@ Channel <- R6::R6Class(
 
         queue_declare = function(queue="", passive=FALSE, durable=FALSE,
                                  exclusive=FALSE, auto_delete=FALSE) {
+            private$queues <- append(
+                private$queues,
+                list(list(name=queue, passive=passive, durable=durable,
+                          exclusive=exclusive, auto_delete=auto_delete))
+            )
+
             amqp_queue_declare(self$conn$xptr, self$channel_number,
                                queue, passive=passive, durable=durable,
                                exclusive=exclusive,
@@ -181,6 +199,10 @@ Channel <- R6::R6Class(
         },
 
         queue_delete = function(queue="", if_unused=FALSE, if_empty=FALSE) {
+            to_keep <- lapply(private$queues, function(queue){
+                (queue$name != queue)
+            })
+            private$queues <- private$queues[to_keep]
             amqp_queue_delete(self$conn$xptr, self$channel_number,
                               queue, if_unused=if_unused,
                               if_empty=if_empty)
@@ -204,12 +226,12 @@ Channel <- R6::R6Class(
                             routing_key=routing_key)
         },
 
-        basic_consume = function(queue="", consumer_tag="", no_ack=FALSE,
-                                 exclusive=FALSE) {
+        basic_consume = function(callback, queue="", consumer_tag="", 
+                                 no_ack=FALSE, exclusive=FALSE) {
+            private$queue_callback[queue] <- callback
             amqp_basic_consume(self$conn$xptr, self$channel_number,
                                queue=queue, consumer_tag=consumer_tag,
                                no_ack=no_ack, exclusive=exclusive)
-            private$is_consuming <- TRUE
         },
 
         basic_get = function(queue="", no_ack=FALSE) {
@@ -246,11 +268,14 @@ Channel <- R6::R6Class(
                                mandatory=mandatory, immediate=immediate)
         },
         
-        listen = function(callback, timeout=NULL) {
-            if (!private$is_consuming) {
-                stop('Must start consumer before consuming (basic_consume).')
+        start_consuming = function(timeout=NULL) {
+            while(TRUE) {
+                envelope <- amqp_consume_message(self$conn$xptr, 
+                                                 timeout=timeout)
+                if (envelope) {
+                    queue_callbacks[envelope$routing_key](envelope)
+                }
             }
-            amqp_listen(self$conn$xptr, callback, timeout=timeout)
         }
     )
 )

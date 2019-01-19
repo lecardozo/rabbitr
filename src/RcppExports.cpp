@@ -216,16 +216,17 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// listen
-void listen(SEXP xptr, Rcpp::Function callback, Rcpp::Nullable<int> timeout);
-RcppExport SEXP _rabbitr_listen(SEXP xptrSEXP, SEXP callbackSEXP, SEXP timeoutSEXP) {
+// consume_message
+SEXP consume_message(SEXP xptr, Rcpp::Function callback, Rcpp::Nullable<int> timeout);
+RcppExport SEXP _rabbitr_consume_message(SEXP xptrSEXP, SEXP callbackSEXP, SEXP timeoutSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
     Rcpp::traits::input_parameter< Rcpp::Function >::type callback(callbackSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type timeout(timeoutSEXP);
-    listen(xptr, callback, timeout);
-    return R_NilValue;
+    rcpp_result_gen = Rcpp::wrap(consume_message(xptr, callback, timeout));
+    return rcpp_result_gen;
 END_RCPP
 }
 
@@ -245,7 +246,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rabbitr_basic_cancel", (DL_FUNC) &_rabbitr_basic_cancel, 3},
     {"_rabbitr_basic_publish", (DL_FUNC) &_rabbitr_basic_publish, 8},
     {"_rabbitr_basic_consume", (DL_FUNC) &_rabbitr_basic_consume, 6},
-    {"_rabbitr_listen", (DL_FUNC) &_rabbitr_listen, 3},
+    {"_rabbitr_consume_message", (DL_FUNC) &_rabbitr_consume_message, 3},
     {NULL, NULL, 0}
 };
 

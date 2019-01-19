@@ -60,5 +60,4 @@ void basic_reject(SEXP xptr, int channel, int delivery_tag,
 
 void basic_recover(SEXP xptr, int channel, bool requeue);
 
-void listen(SEXP xptr, Rcpp::Function callback,
-            Rcpp::Nullable<int> timeout = R_NilValue);
+SEXP consume_message(SEXP xptr, Rcpp::Nullable<int> timeout = R_NilValue);

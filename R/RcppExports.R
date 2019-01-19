@@ -61,7 +61,7 @@ amqp_basic_consume <- function(xptr, channel, queue, consumer_tag, no_ack, exclu
     invisible(.Call('_rabbitr_basic_consume', PACKAGE = 'rabbitr', xptr, channel, queue, consumer_tag, no_ack, exclusive))
 }
 
-amqp_listen <- function(xptr, callback, timeout = NULL) {
-    invisible(.Call('_rabbitr_listen', PACKAGE = 'rabbitr', xptr, callback, timeout))
+amqp_consume_message <- function(xptr, callback, timeout = NULL) {
+    .Call('_rabbitr_consume_message', PACKAGE = 'rabbitr', xptr, callback, timeout)
 }
 

@@ -237,9 +237,9 @@ void basic_recover(SEXP xptr, int channel, bool requeue) {
     amqp_basic_recover(conn, channel, requeue);
 }
 
-//[[Rcpp::export("amqp_listen")]]
-void listen(SEXP xptr, Rcpp::Function callback,
-            Rcpp::Nullable<int> timeout = R_NilValue) {
+//[[Rcpp::export("amqp_consume_message")]]
+SEXP consume_message(SEXP xptr, Rcpp::Function callback,
+                     Rcpp::Nullable<int> timeout = R_NilValue) {
     struct timeval tval;
     struct timeval *tout;
 
@@ -254,26 +254,23 @@ void listen(SEXP xptr, Rcpp::Function callback,
 
     amqp_connection_state_t conn = get_connection_state(xptr);
     amqp_frame_t frame;
+    amqp_rpc_reply_t res;
+    amqp_envelope_t envelope;
+    amqp_maybe_release_buffers(conn);
 
-    for (;;) {
-        Rcpp::checkUserInterrupt();
+    res = amqp_consume_message(conn, &envelope, tout, 0);
 
-        amqp_rpc_reply_t res;
-        amqp_envelope_t envelope;
-        amqp_maybe_release_buffers(conn);
-
-        res = amqp_consume_message(conn, &envelope, tout, 0);
-
-        if (AMQP_RESPONSE_NORMAL != res.reply_type) {
-            if (AMQP_RESPONSE_LIBRARY_EXCEPTION == res.reply_type &&
-                AMQP_STATUS_UNEXPECTED_STATE == res.library_error) {
-                if (AMQP_STATUS_OK != amqp_simple_wait_frame(conn, &frame)) {
-                    break;
-                }
+    if (AMQP_RESPONSE_NORMAL != res.reply_type) {
+        if (AMQP_RESPONSE_LIBRARY_EXCEPTION == res.reply_type &&
+            AMQP_STATUS_UNEXPECTED_STATE == res.library_error) {
+            if (AMQP_STATUS_OK != amqp_simple_wait_frame(conn, &frame)) {
+                amqp_destroy_envelope(&envelope);
+                return R_NilValue;
             }
-        } else {
-            callback(rabbitr_envelope(envelope));
         }
-        amqp_destroy_envelope(&envelope);
+    } else {
+        return rabbitr_envelope(envelope);
     }
+
+    return R_NilValue;
 }
