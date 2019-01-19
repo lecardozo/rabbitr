@@ -53,15 +53,15 @@ amqp_basic_cancel <- function(xptr, channel, consumer_tag) {
     invisible(.Call('_rabbitr_basic_cancel', PACKAGE = 'rabbitr', xptr, channel, consumer_tag))
 }
 
-amqp_basic_publish <- function(xptr, channel, exchange, routing_key, mandatory, immediate, body, properties) {
-    invisible(.Call('_rabbitr_basic_publish', PACKAGE = 'rabbitr', xptr, channel, exchange, routing_key, mandatory, immediate, body, properties))
+amqp_basic_publish <- function(xptr, channel, exchange, routing_key, body, properties, mandatory, immediate) {
+    invisible(.Call('_rabbitr_basic_publish', PACKAGE = 'rabbitr', xptr, channel, exchange, routing_key, body, properties, mandatory, immediate))
 }
 
 amqp_basic_consume <- function(xptr, channel, queue, consumer_tag, no_ack, exclusive) {
     invisible(.Call('_rabbitr_basic_consume', PACKAGE = 'rabbitr', xptr, channel, queue, consumer_tag, no_ack, exclusive))
 }
 
-amqp_consume_message <- function(xptr, callback, timeout = NULL) {
-    .Call('_rabbitr_consume_message', PACKAGE = 'rabbitr', xptr, callback, timeout)
+amqp_consume_message <- function(xptr, timeout = NULL) {
+    .Call('_rabbitr_consume_message', PACKAGE = 'rabbitr', xptr, timeout)
 }
 

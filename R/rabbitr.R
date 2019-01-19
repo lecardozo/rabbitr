@@ -228,7 +228,7 @@ Channel <- R6::R6Class(
 
         basic_consume = function(callback, queue="", consumer_tag="", 
                                  no_ack=FALSE, exclusive=FALSE) {
-            private$queue_callback[queue] <- callback
+            private$queue_callbacks[[queue]] <- callback
             amqp_basic_consume(self$conn$xptr, self$channel_number,
                                queue=queue, consumer_tag=consumer_tag,
                                no_ack=no_ack, exclusive=exclusive)
@@ -260,29 +260,37 @@ Channel <- R6::R6Class(
         },
 
         basic_publish = function(exchange, routing_key, body,
-                                 properties=message_properties(),
-                                 mandatory=FALSE, immediate=FALSE) {
+                                 properties, mandatory=FALSE,
+                                 immediate=FALSE) {
+            if (missing(properties)) {
+                properties <- basic_message_properties()
+            }
             amqp_basic_publish(self$conn$xptr, self$channel_number,
                                exchange=exchange, routing_key=routing_key,
                                body=body, properties=properties,
                                mandatory=mandatory, immediate=immediate)
         },
-        
-        start_consuming = function(timeout=NULL) {
+
+        start_consuming = function(timeout=0.1) {
+            # TODO: this is probably not the ideal solution.
+            # Maybe passing the queue_callback map to cpp function
+            # and letting it execute the while loop on its own
+            # is better...
             while(TRUE) {
                 envelope <- amqp_consume_message(self$conn$xptr, 
-                                                 timeout=timeout)
-                if (envelope) {
-                    queue_callbacks[envelope$routing_key](envelope)
+                                                 timeout=0)
+                if (!is.null(envelope)) {
+                    private$queue_callbacks[[envelope$routing_key]](envelope)
                 }
+                Sys.sleep(timeout)
             }
         }
     )
 )
 
 
-message_properties <- function(content_type="text/plain", content_encoding="",
-                       delivery_mode=1, priority=0, correlation_id=NULL,
+basic_message_properties <- function(content_type="text/plain", content_encoding="",
+                       delivery_mode=1, priority=0, correlation_id="",
                        reply_to="", expiration="", message_id="",
                        timestamp="", message_type="", user_id="",
                        app_id="") {

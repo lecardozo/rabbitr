@@ -15,6 +15,10 @@ amqp_basic_properties_t convert_properties(Rcpp::List r_props) {
     amqp_props.reply_to = rstr_to_bytes(r_props["reply_to"]);
     amqp_props.expiration = rstr_to_bytes(r_props["expiration"]);
     amqp_props.message_id = rstr_to_bytes(r_props["message_id"]);
+    amqp_props._flags = AMQP_BASIC_DELIVERY_MODE_FLAG |
+                        AMQP_BASIC_CONTENT_TYPE_FLAG |
+                        AMQP_BASIC_CONTENT_ENCODING_FLAG |
+                        AMQP_BASIC_REPLY_TO_FLAG;
     return amqp_props;
 }
 
