@@ -209,8 +209,9 @@ void basic_cancel(SEXP xptr, int channel, std::string consumer_tag) {
 
 // [[Rcpp::export("amqp_basic_publish")]]
 void basic_publish(SEXP xptr, int channel, std::string exchange,
-                   std::string routing_key, bool mandatory,
-                   bool immediate, std::string body, List properties) {
+                   std::string routing_key, std::string body,
+                   List properties, bool mandatory,
+                   bool immediate) {
 
     amqp_basic_properties_t props= convert_properties(properties);
     amqp_connection_state_t conn = get_connection_state(xptr);
@@ -262,7 +263,7 @@ void basic_recover(SEXP xptr, int channel, bool requeue) {
 }
 
 //[[Rcpp::export("amqp_consume_message")]]
-SEXP consume_message(SEXP xptr, Rcpp::Function callback,
+SEXP consume_message(SEXP xptr,
                      Rcpp::Nullable<int> timeout = R_NilValue) {
     struct timeval tval;
     struct timeval *tout;

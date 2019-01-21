@@ -185,19 +185,19 @@ BEGIN_RCPP
 END_RCPP
 }
 // basic_publish
-void basic_publish(SEXP xptr, int channel, std::string exchange, std::string routing_key, bool mandatory, bool immediate, std::string body, List properties);
-RcppExport SEXP _rabbitr_basic_publish(SEXP xptrSEXP, SEXP channelSEXP, SEXP exchangeSEXP, SEXP routing_keySEXP, SEXP mandatorySEXP, SEXP immediateSEXP, SEXP bodySEXP, SEXP propertiesSEXP) {
+void basic_publish(SEXP xptr, int channel, std::string exchange, std::string routing_key, std::string body, List properties, bool mandatory, bool immediate);
+RcppExport SEXP _rabbitr_basic_publish(SEXP xptrSEXP, SEXP channelSEXP, SEXP exchangeSEXP, SEXP routing_keySEXP, SEXP bodySEXP, SEXP propertiesSEXP, SEXP mandatorySEXP, SEXP immediateSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
     Rcpp::traits::input_parameter< int >::type channel(channelSEXP);
     Rcpp::traits::input_parameter< std::string >::type exchange(exchangeSEXP);
     Rcpp::traits::input_parameter< std::string >::type routing_key(routing_keySEXP);
-    Rcpp::traits::input_parameter< bool >::type mandatory(mandatorySEXP);
-    Rcpp::traits::input_parameter< bool >::type immediate(immediateSEXP);
     Rcpp::traits::input_parameter< std::string >::type body(bodySEXP);
     Rcpp::traits::input_parameter< List >::type properties(propertiesSEXP);
-    basic_publish(xptr, channel, exchange, routing_key, mandatory, immediate, body, properties);
+    Rcpp::traits::input_parameter< bool >::type mandatory(mandatorySEXP);
+    Rcpp::traits::input_parameter< bool >::type immediate(immediateSEXP);
+    basic_publish(xptr, channel, exchange, routing_key, body, properties, mandatory, immediate);
     return R_NilValue;
 END_RCPP
 }
@@ -217,15 +217,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // consume_message
-SEXP consume_message(SEXP xptr, Rcpp::Function callback, Rcpp::Nullable<int> timeout);
-RcppExport SEXP _rabbitr_consume_message(SEXP xptrSEXP, SEXP callbackSEXP, SEXP timeoutSEXP) {
+SEXP consume_message(SEXP xptr, Rcpp::Nullable<int> timeout);
+RcppExport SEXP _rabbitr_consume_message(SEXP xptrSEXP, SEXP timeoutSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type xptr(xptrSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Function >::type callback(callbackSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<int> >::type timeout(timeoutSEXP);
-    rcpp_result_gen = Rcpp::wrap(consume_message(xptr, callback, timeout));
+    rcpp_result_gen = Rcpp::wrap(consume_message(xptr, timeout));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -246,7 +245,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rabbitr_basic_cancel", (DL_FUNC) &_rabbitr_basic_cancel, 3},
     {"_rabbitr_basic_publish", (DL_FUNC) &_rabbitr_basic_publish, 8},
     {"_rabbitr_basic_consume", (DL_FUNC) &_rabbitr_basic_consume, 6},
-    {"_rabbitr_consume_message", (DL_FUNC) &_rabbitr_consume_message, 3},
+    {"_rabbitr_consume_message", (DL_FUNC) &_rabbitr_consume_message, 2},
     {NULL, NULL, 0}
 };
 

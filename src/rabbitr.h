@@ -42,8 +42,9 @@ Rcpp::List basic_get(SEXP xptr, int channel, std::string queue,
 void basic_cancel(SEXP xptr, int channel, std::string consumer_tag);
 
 void basic_publish(SEXP xptr, int channel, std::string exchange,
-                   std::string routing_key, bool mandatory,
-                   bool immediate, std::string body, Rcpp::List properties);
+                   std::string routing_key, std::string body
+                   Rcpp::List properties, bool mandatory,
+                   bool immediate);
 
 void basic_consume(SEXP xptr, int channel, std::string queue,
                    std::string consumer_tag,
