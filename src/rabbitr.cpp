@@ -167,37 +167,14 @@ List basic_get(SEXP xptr, int channel, std::string queue,
     amqp_connection_state_t conn = get_connection_state(xptr);
 
     reply = amqp_basic_get(conn, channel, queuename, no_ack);
-    
-    if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
-      if (reply.reply_type == AMQP_RESPONSE_SERVER_EXCEPTION) {
-        switch (reply.reply.id) {
-          case AMQP_CHANNEL_CLOSE_METHOD: {
-            amqp_channel_close_t *m = (amqp_channel_close_t *) reply.reply.decoded;
-            std::string error((char *) m->reply_text.bytes,
-                              (int) m->reply_text.len);
-            amqp_channel_close_ok_t resp;
-            amqp_send_method(conn, channel, AMQP_CHANNEL_CLOSE_OK_METHOD, 
-                             &resp);
-            throw std::runtime_error("Server channel error " + error);
-            break;
-          }
-          case AMQP_CONNECTION_CLOSE_METHOD: {
-            amqp_connection_close_ok_t  m;
-            amqp_send_method(conn, channel, AMQP_CONNECTION_CLOSE_OK_METHOD, &m);
-            break;
-          }
-        }
-      } else if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
-          Rcout << "lbrary exception" << std::endl;
-      }
-    }
+    check_errors(reply);
 
-    amqp_read_message(conn, channel, &message, 0);
+    amqp_rpc_reply_t res = amqp_read_message(conn, channel, &message, 0);
+    check_errors(res);
 
-    char *body_bytes = (char*)malloc(message.body.len);
-    memcpy(body_bytes, message.body.bytes, message.body.len);
-    std::string body(body_bytes);
+    std::string body((char *) message.body.bytes, message.body.len);
 
+    amqp_destroy_message(&message);
     return Rcpp::List::create(Rcpp::Named("body") = body);
 }
 

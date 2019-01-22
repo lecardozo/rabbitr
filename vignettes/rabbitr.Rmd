@@ -43,7 +43,18 @@ chan$queue_declare('test')
 With our 'test' queue already declared, we can now send a message to it, using the `$basic_publish`
 method. If you are already familiar with the AMQP protocol, you probably now that messages are sent
 to exchanges and not directly to queues. If we want to sent our messages directly to our queue,
-we need to send it to the default exchange ("") with the `routing_key` parameter set to our queue name ("test").
+we need to send it to the default exchange (`""`) with the `routing_key` parameter set to our queue name (`"test"`).
 ```r
 chan$basic_publish(exchange="", routing_key="test", body="this is my message")
+```
+
+### Receiving messages
+
+Now, in order to read the messages sent to the `"test"` queue, we have two possible solutions: First the `$basic_get` method
+```{r}
+envelope <- chan$basic_get(queue="test")
+
+if (!is.null(msg)) {
+  print(msg$body)
+}
 ```
