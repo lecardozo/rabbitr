@@ -51,7 +51,7 @@ chan <- conn$channel()
 # declare queue
 chan$queue_declare('testing')
 
-# define a callback messages arriving
+# define a callback to call for each message that arrives
 callback <- function(envelope) { print(envelope$message) }
 
 # start consumer
