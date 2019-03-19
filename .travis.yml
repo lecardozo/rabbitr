@@ -18,6 +18,9 @@ matrix:
               - sudo apt-get install rabbitmq-server
         - name: "OSX"
           os: osx
+          before_script:
+              brew services start rabbitmq
           brew_packages: 
+              - rabbitmq
               - rabbitmq-c
               - libgit2
