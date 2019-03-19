@@ -54,7 +54,7 @@ Now, in order to read the messages sent to the `"test"` queue, we have two possi
 ```{r}
 envelope <- chan$basic_get(queue="test")
 
-if (!is.null(msg)) {
-  print(msg$body)
+if (!is.null(envelope)) {
+  print(envelope$body)
 }
 ```
