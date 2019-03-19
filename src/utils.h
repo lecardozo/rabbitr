@@ -48,3 +48,8 @@ amqp_bytes_t rstr_to_bytes(SEXP a);
  * @returns amqp propeties object
  */
 amqp_basic_properties_t convert_properties(Rcpp::List r_props);
+
+/**
+ * Checks amqp_rpc_reply_t objects for exceptions
+ */
+void check_errors(amqp_rpc_reply_t reply);

@@ -47,3 +47,14 @@ we need to send it to the default exchange ("") with the `routing_key` parameter
 ```{r}
 chan$basic_publish(exchange="", routing_key="test", body="this is my message")
 ```
+
+### Receiving messages
+
+Now, in order to read the messages sent to the `"test"` queue, we have two possible solutions: First the `$basic_get` method
+```{r}
+envelope <- chan$basic_get(queue="test")
+
+if (!is.null(msg)) {
+  print(msg$body)
+}
+```

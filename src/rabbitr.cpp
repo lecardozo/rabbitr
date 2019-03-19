@@ -167,13 +167,14 @@ List basic_get(SEXP xptr, int channel, std::string queue,
     amqp_connection_state_t conn = get_connection_state(xptr);
 
     reply = amqp_basic_get(conn, channel, queuename, no_ack);
+    check_errors(reply);
 
-    amqp_read_message(conn, channel, &message, 0);
+    amqp_rpc_reply_t res = amqp_read_message(conn, channel, &message, 0);
+    check_errors(res);
 
-    char *body_bytes = (char*)malloc(message.body.len);
-    memcpy(body_bytes, message.body.bytes, message.body.len);
-    std::string body(body_bytes);
+    std::string body((char *) message.body.bytes, message.body.len);
 
+    amqp_destroy_message(&message);
     return Rcpp::List::create(Rcpp::Named("body") = body);
 }
 

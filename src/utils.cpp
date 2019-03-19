@@ -9,6 +9,7 @@ amqp_bytes_t rstr_to_bytes(SEXP a) {
 
 amqp_basic_properties_t convert_properties(Rcpp::List r_props) {
     amqp_basic_properties_t amqp_props;
+    amqp_props.delivery_mode = r_props["delivery_mode"];
     amqp_props.content_type = rstr_to_bytes(r_props["content_type"]);
     amqp_props.content_encoding = rstr_to_bytes(r_props["content_encoding"]);
     amqp_props.correlation_id = rstr_to_bytes(r_props["correlation_id"]);
@@ -64,6 +65,34 @@ Rcpp::List rabbitr_envelope(amqp_envelope_t envelope) {
         Rcpp::Named("exchange") = Rcpp::String(exchange),
         Rcpp::Named("message") = rabbitr_message(envelope.message)
     );
+}
+
+void check_errors(amqp_rpc_reply_t reply) {
+    if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
+        if (reply.reply_type == AMQP_RESPONSE_SERVER_EXCEPTION) {
+          switch (reply.reply.id) {
+            case AMQP_CHANNEL_CLOSE_METHOD: {
+              amqp_channel_close_t *m = (amqp_channel_close_t *) reply.reply.decoded;
+              std::string error((char *) m->reply_text.bytes,
+                                (int) m->reply_text.len);
+              throw std::runtime_error("Server channel error " + error);
+              break;
+            }
+            case AMQP_CONNECTION_CLOSE_METHOD: {
+              amqp_connection_close_t *m = (amqp_connection_close_t *) reply.reply.decoded;
+              std::string error((char *) m->reply_text.bytes,
+                                (int) m->reply_text.len);
+              throw std::runtime_error("Server connection error: " + error);
+              break;
+            }
+          }
+        } else if (reply.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
+            throw std::runtime_error("Librabbitmq exception: " +
+                  std::string(amqp_error_string2(reply.library_error))
+            );
+        }
+    }
+    return;
 }
 
 void amqp_finalize_connection(amqp_connection_state_t_* conn) {
